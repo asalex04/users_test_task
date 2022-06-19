@@ -12,7 +12,7 @@ const generateJwt = (id, email, name) => {
 }
 
 class UserService {
-    async registration(name, email, password) {
+    async registration(email, name, password) {
         if (!email || !password) {
             return ApiError.badRequest("Wrong email or password")
         }
@@ -28,7 +28,7 @@ class UserService {
     async login(email, password) {
         const user = await User.findOne({where: {email}})
         if (!user) {
-            return ApiError.badRequest(`User with email: ${email} not exist`)
+            return ApiError.badRequest(`User with email: '${email}' not exist`)
         }
         let comparePassword = bcrypt.compareSync(password, user.password)
         if (!comparePassword) {
@@ -36,6 +36,31 @@ class UserService {
         }
         const token = generateJwt(user.id, user.email, user.name)
         return token
+    }
+
+    async getUsers(page, size) {
+        let offset = page * size - size
+        const users = await User.findAndCountAll({
+            limit: size,
+            offset: offset,
+            order: [['myDate', 'DESC']]
+        })
+        return users
+    }
+    async getOneUser(id) {
+        const user = await User.findOne({where: {id}})
+        if (!user) {
+            return ApiError.badRequest(`User not exist`)
+        }
+        return user
+    }
+    async updateUser(id, USER_MODEL) {
+        await User.update(USER_MODEL, { where: {id}});
+        const user = await User.findOne({ where: {id}});
+        if (!user) {
+            return ApiError.badRequest(`User not exist`)
+        }
+        return user
     }
 }
 
